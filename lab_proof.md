@@ -2,10 +2,10 @@
 
 **Project:** AI Food Concierge  
 **Lab:** Autonomous AI Systems — Scoping & Project Planning  
-**Status:** Planning completed; optional prototype and execution evidence not yet performed  
-**Last updated:** 5 November 2026
+**Status:** Planning completed; local deterministic proof and optional n8n agent tests performed  
+**Last updated:** 6 November 2026
 
-> **Submission transparency:** This document is the planning deliverable for Steps 1–5. The lab instructions also request a workflow configuration/export, one real execution trace, one input payload, and one output record in `lab_proof.md`, while describing prototype implementation (Step 6) as optional. No workflow has been executed for this project as part of this submission; therefore no execution trace or actual output is claimed. A decision on whether to complete Step 6 will be made separately.
+> **Submission transparency:** Steps 1–5 are documented below. Optional Step 6 has now been tested in two distinct forms: (1) a local deterministic Python fallback with saved input/output/trace fixtures, and (2) an n8n AI Agent using a fictional restaurant-search Code Tool, tested interactively on 6 November 2026. A sanitized workflow export is included at `workflows/ai_food_concierge_workflow.json`. The n8n chat replies and one actual tool result were observed during testing, but a downloadable n8n execution trace / execution ID has **not** been provided; the local Python trace is **not** an n8n trace.
 
 ---
 
@@ -289,59 +289,106 @@ Review unsuccessful searches, recurring clarification problems, user feedback, t
 
 ## 7. Lab Proof of Learning — Evidence Status
 
-The opening lab instructions describe a narrow **trigger → transform → action** workflow and request evidence that data moves from input to output. The deterministic local fallback below was actually executed. n8n-specific execution was not possible because no n8n executable or Docker runtime was present during inspection.
+The lab describes a narrow **trigger → transform → action** path and asks for evidence that data moves from input to output. A deterministic local Python fallback was executed and saved, and a separate, optional n8n AI Agent was subsequently assembled and tested interactively. These are **different implementations** with different levels of evidence.
 
 | Requested evidence | Status | Notes |
 |---|---|---|
-| Use-case definition, technical design, scope and risks | **Documented** | Sections 1–4 |
-| Implementation phases, timeline, resources and success measures | **Documented** | Sections 5–6 |
-| Workflow configuration or export | **Local configuration documented; n8n export NOT VERIFIED** | `workflows/README.md` gives the node-by-node assembly; no unvalidated JSON export is supplied |
-| One input payload used in an execution | **Observed locally** | `fixtures/input.demo.json` |
-| One execution trace from a successful run | **Observed locally** | `fixtures/trace.demo.json`; `n8n_executed: false` |
-| One resulting output record / destination artifact | **Observed locally** | `fixtures/output.demo.json` |
+| Use case, technology design, MVP scope, risks | **Documented** | Sections 1–4 |
+| Project phases, resources, timeline, success metrics | **Documented** | Sections 5–6 |
+| Workflow export/configuration | **Available** | Sanitized n8n export: `workflows/ai_food_concierge_workflow.json`; local assembly notes: `workflows/README.md` |
+| Example input payload | **Available** | Local file `fixtures/input.demo.json`; n8n test inputs reproduced in Section 7.3 |
+| Execution trace | **Local: saved; n8n: partially observed** | Saved local trace: `fixtures/trace.demo.json` (`n8n_executed: false`). n8n tool result and call count were observed interactively; full n8n trace and execution ID not archived here |
+| Resulting output | **Observed** | Local file `fixtures/output.demo.json`; n8n chat outputs described in Section 7.3 |
 
-### 7.1 Optional Step 6 — Actual implementation proof (local fallback)
+### 7.1 Local deterministic implementation and proof
 
-- **Implementation date:** 6 November 2026
-- **n8n version / environment:** NOT AVAILABLE / NOT VERIFIED. No `n8n` or Docker command was found during repository and environment inspection.
-- **Local implementation:** `scripts/restaurant_discovery.py`
-- **Workflow export/configuration:** `workflows/README.md` (manual assembly guide; no importable export)
-- **n8n execution ID:** NOT RUN
-- **Observed local execution ID:** `local-b6306a15-4035-4d73-8e9f-b44874f426e9`
-- **Executed at:** `2026-11-06T11:34:31Z` (local runner, UTC)
-- **Input payload:** `fixtures/input.demo.json`
-- **Sanitized execution trace:** `fixtures/trace.demo.json`
-- **Observed output record:** `fixtures/output.demo.json`
-- **Result:** PASS for the local deterministic proof path; n8n execution remains NOT VERIFIED.
-- **Nodes/stages observed:** Input trigger; Normalize & Validate Input; Extract Search Preferences; Enough Information for Discovery?; Read Synthetic Catalog; Filter & Rank Matches; Format Grounded Response; Observable Output.
-- **Mapping verification:** `message` mapped to `intent=discovery`, `city=Heidelberg`, `cuisine=Greek`, `budget_max_eur=30`; catalog lookup read 7 records and returned only `demo-gr-01`. Its `booking_channel=unknown`, `source=fictional_demo_fixture`, and `availability_checked=false` are present in the output.
-- **First daily failure to monitor:** A recommendation or claim that cannot be traced to a returned catalog record, or a dropped/incorrect preference mapping.
-- **Known limitations:** Fictional catalog only; rule-based extraction; no live availability; no reservation action; no external data source; no n8n runtime/export validation; no LLM credential; no validated autonomous agent.
+- **Implementation date:** 6 November 2026.
+- **Local runtime:** Python standard library; local runner `scripts/restaurant_discovery.py`.
+- **Original local workflow documentation:** `workflows/README.md`.
+- **Local execution ID in the supplied proof file:** `local-b6306a15-4035-4d73-8e9f-b44874f426e9`.
+- **Recorded local timestamp:** `2026-11-06T11:34:31Z` (UTC).
+- **Input:** `fixtures/input.demo.json`.
+- **Local trace:** `fixtures/trace.demo.json`.
+- **Output:** `fixtures/output.demo.json`.
+- **Reported local verification:** `python -m unittest discover -s tests -p "test_*.py" -v` → **10/10 tests passed**, independently rerun by the project author.
+- **Observed data mapping:** `city=Heidelberg`, `cuisine=Greek`, `budget_max_eur=30` → catalog lookup over seven fictional restaurants → `demo-gr-01`.
+- **Local limitations:** Deterministic rules, no LLM-driven reasoning, no conversation memory, no n8n or live availability. This remains a valid *local workflow proof*, not proof of autonomy.
 
 ### 7.2 Local acceptance checks
 
-| Test | Result | Evidence |
+| Test | Local result | Evidence |
 |---|---|---|
-| T01 exact Greek/Heidelberg/budget match | **PASS** | `demo-gr-01` returned and traced in output/trace |
-| T02 empty/whitespace/malformed message | **PASS** | Automated test suite |
-| T03 missing city | **PASS** | Targeted clarification; search not performed |
-| T04 no exact cuisine match | **PASS** | Alternatives are separately labeled |
-| T05 unknown atmosphere | **PASS** | Unknown remains `null`; response says not documented |
-| T06 booking request | **PASS** | No reservation or availability claim |
-| T07 unknown booking status | **PASS** | `unknown`, not offline/unavailable |
-| T08 catalog failure | **PASS** | Structured safe error; no recommendations |
-| T09 second-turn session memory | **NOT RUN** | Phase 2 agent behavior not implemented |
-| T10 agent-selected alternative tool | **NOT RUN** | No n8n runtime or LLM credential |
+| T01: Greek restaurant in Heidelberg, ≤€30 | **PASS** | `demo-gr-01` returned; source and booking status preserved |
+| T02: invalid/empty messages | **PASS** | Automated tests |
+| T03: missing city | **PASS** | Requests clarification |
+| T04: no exact cuisine match | **PASS** | Separately labeled alternatives |
+| T05: unknown atmosphere | **PASS** | Does not invent atmosphere |
+| T06: booking request | **PASS** | No confirmed reservation or availability claim |
+| T07: unknown booking method | **PASS** | Retains `unknown` |
+| T08: missing/broken catalog | **PASS** | Structured safe failure |
+| T09: conversation memory | **NOT IMPLEMENTED LOCALLY** | Tested separately in n8n (Section 7.3) |
+| T10: autonomous alternative-tool selection | **NOT IMPLEMENTED LOCALLY** | Tested separately in n8n (Section 7.3) |
 
-### 7.3 Submission check
+### 7.3 Optional Step 6 — n8n AI Agent demonstration
 
-- [x] Planning requirements from Steps 1–5 addressed.
-- [x] MVP and long-term platform vision clearly separated.
-- [x] Major assumptions, conditional features and risks explicitly identified.
-- [x] No credentials, tokens, or personal restaurant/customer data included.
-- [x] Local deterministic Step 6 path built and tested.
-- [x] Actual local input, trace, and output artifacts recorded.
-- [ ] n8n workflow export and n8n execution evidence collected; blocked by missing runtime.
+**Test date:** 6 November 2026. **Environment:** Existing n8n instance accessed interactively (exact n8n version not recorded). **Model configured:** `gpt-4o-mini` via an OpenAI Chat Model node. **Evidence supplied:** Exported n8n workflow configuration, chat replies, one Code Tool output and an observed count of tool calls. **n8n execution ID and full downloaded execution trace:** not supplied.
+
+**Export:** `workflows/ai_food_concierge_workflow.json` (sanitized for sharing; reconnect the OpenAI credential after importing).
+
+**Configured workflow and connections:**
+
+```text
+When chat message received (Chat Trigger)
+  -> AI Agent
+     |-- OpenAI Chat Model (gpt-4o-mini)
+     |-- Simple Memory (context window: 10)
+     `-- Code Tool (JavaScript restaurant search over seven fictional records)
+```
+
+**Test N01 — Exact match and tool evidence (observed):**
+
+- **Chat input:** `I'm looking for a Greek restaurant in Heidelberg with a budget of €30 per person.`
+- **Chat output:** Recommended **Demo Greek Bistro**, Greek/Mediterranean, **€25 per person**.
+- **Inspected Code Tool output:** `status=ok`, `data_mode=synthetic_demo`, `search={city:Heidelberg, cuisine:Greek, budget_max_eur:30}`, `match_count=1`, `matched_restaurants[0].restaurant_id=demo-gr-01`, `booking_channel=unknown`, `availability_checked=false`.
+- **Result:** **PASS** for actual n8n input → agent-selected Code Tool → grounded chat output. The first chat reply omitted the fictional-data disclaimer, revealing a prompt/compliance issue.
+
+**Test N10 — Autonomous alternative search (observed):**
+
+- **Chat input:** `I'm looking for a Spanish restaurant in Heidelberg. If nothing matches, please suggest alternatives.`
+- **Chat output:** No Spanish match reported; proposed **Demo Anatolia Table (€18)**, **Demo Mediterranean Kitchen (€22)** and **Demo Greek Bistro (€25)** as Mediterranean alternatives.
+- **Agent execution log observation:** **Two Code Tool calls**, reported by the tester.
+- **Result:** **Functional demonstration passed** for multi-call autonomous exploration. Individual per-call arguments and returned payloads were not preserved, so the exact alternative-search sequence is **not independently reconstructable** from this document.
+
+**Test N09 — Conversation-memory continuity (observed):**
+
+- **Follow-up in the same chat:** `Actually, I'd prefer Italian food instead. Keep my previous city.`
+- **Chat output:** **Demo Pasta Corner**, Italian, **Heidelberg**, **€20 per person**.
+- **Result:** **PASS at the chat-behavior level**: the assistant reused Heidelberg without the user repeating it and updated the cuisine. The separate internal memory state was not exported.
+
+**Test N11 — Disclosure / fresh-session regression check (observed):**
+
+- **Chat input (new session):** `I'm looking for Korean food in Heidelberg under €30.`
+- **Chat output:** **Demo Seoul Kitchen**, Korean, Heidelberg, **€28**, including the explicit sentence: `Please note that all restaurant names and information are fictional demo data used for testing.`
+- **Result:** **PASS** for grounded recommendation and explicit demo disclaimer after updating the system message. A Code Tool log for this particular new-session call was not separately supplied.
+
+**Remaining limitations / operational risk:**
+
+- All restaurant records are synthetic and embedded in the Code Tool; the workflow is not connected to a live restaurant database.
+- No real-time table availability, booking execution, payments, external reservation integrations or production deployment were tested.
+- The system prompt requests at most three tool calls, but no independent technical hard cap was demonstrated.
+- Output disclaimers are prompt-driven; one initial response omitted the disclosure. A deterministic response guard would be more reliable for a public pilot.
+- The complete n8n execution export/screenshot, execution ID, and per-call logs for the alternative search remain to be collected if stronger audit evidence is required.
+- The sanitized workflow has no exported credentials or instance identifiers; credentials must be configured manually when imported into another n8n environment.
+
+### 7.4 Submission checklist
+
+- [x] Steps 1–5 documented with decisions, scope, assumptions and risks.
+- [x] Local fallback implemented, tested, and saved with input/output/trace fixtures.
+- [x] Optional n8n AI Agent configured and tested interactively with a fictional dataset.
+- [x] n8n workflow exported; a sanitized copy supplied for sharing.
+- [x] T01 exact-match search, T09 chat continuity, and T10 multiple tool calls observed in n8n.
+- [x] Synthetic data clearly identified; no real booking or availability claims.
+- [ ] Downloaded n8n execution trace / execution ID and full alternative-search per-call logs archived (not provided).
 
 ---
 
@@ -349,4 +396,4 @@ The opening lab instructions describe a narrow **trigger → transform → actio
 
 The AI Food Concierge is designed to reduce the effort of restaurant discovery through natural conversation and bounded autonomous exploration. Its first MVP focuses on the smallest differentiated experience that can be tested with reliable structured restaurant data in one city. Availability checks remain conditional on authorized access, while reservations, seating selection and delivery are later phases.
 
-The planning work defines the business need, stakeholders, value proposition, technology decisions, MVP boundaries, risks, milestones, provisional resources, and evaluation measures. Whether to execute the optional proof prototype will be decided separately; until then, execution-related evidence is openly marked as outstanding.
+The planning work defines the business need, stakeholders, value proposition, technology decisions, MVP boundaries, risks, milestones, provisional resources, and evaluation measures. Optional Step 6 has additionally been demonstrated in n8n with a configured AI Agent, an observed search-tool response, a multi-call alternative search and a context-dependent follow-up. These observations are not evidence of production readiness, live availability or real reservations; the n8n execution ID and full machine-exported trace remain unarchived.
